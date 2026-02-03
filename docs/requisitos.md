@@ -33,3 +33,15 @@ e realizar o cálculo mensal de valores de forma simulada.
 **RF07** – O sistema deve calcular e exibir o valor total mensal devido pelo profissional com base nos horários utilizados.
 
 ---
+
+## 3. Requisitos Não Funcionais
+
+**RNF01** – O sistema deve utilizar o banco de dados PostgreSQL para armazenamento das informações.
+
+**RNF02** – O backend do sistema deve ser desenvolvido utilizando a linguagem Python.
+
+**RNF03** – O sistema deve possuir uma interface simples, priorizando a usabilidade e clareza das informações.
+
+**RNF04** – O sistema deve ser desenvolvido como um MVP (Produto Mínimo Viável), conforme escopo definido para a disciplina Projeto Integrado I.
+
+**RNF05** – O sistema não deve realizar cobranças reais, apenas simular o cálculo dos valores mensais.
