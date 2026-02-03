@@ -15,6 +15,10 @@ Representa as salas disponíveis para sublocação no sistema.
 ### Entidade: Profissional
 Representa o profissional que utiliza o sistema para realizar agendamentos.
 
-### Entidade: Agendamento
-Representa o registro de agendamento de uma sala por um profissional,
+### Entidade: HorarioReservado
+Representa um horário específico reservado por um profissional em uma sala,
 contendo informações de data e horário.
+
+### Entidade: Recorrencia
+Representa o padrão de repetição associado a um ou mais horários reservados,
+permitindo a criação de reservas recorrentes.
