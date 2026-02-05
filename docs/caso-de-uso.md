@@ -58,3 +58,9 @@
 1. O profissional solicita a consulta do valor mensal.
 2. O sistema calcula o total com base nos agendamentos.
 3. O sistema exibe o valor calculado.
+
+---
+
+## Diagrama de Caso de Uso
+
+![Diagrama de Caso de Uso](diagrama-casos-de-uso.png)
