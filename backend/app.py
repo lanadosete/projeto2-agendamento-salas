@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from database.connection import get_connection
 
 app = Flask(__name__)
@@ -68,6 +68,112 @@ def salas_disponiveis():
         })
 
     return jsonify(resultado)
+
+@app.route("/agendamentos/avulso", methods=["POST"])
+def agendar_avulso():
+    dados = request.get_json()
+
+    id_profissional = dados.get("id_profissional")
+    id_sala = dados.get("id_sala")
+    data_inicio = dados.get("data_inicio")
+    data_fim = dados.get("data_fim")
+
+    if not all([id_profissional, id_sala, data_inicio, data_fim]):
+        return jsonify({"erro": "Dados obrigatórios não informados"}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute(
+            """
+            INSERT INTO horario_reservado
+            (id_profissional, id_sala, data_inicio, data_fim, tipo)
+            VALUES (%s, %s, %s, %s, 'AVULSO');
+            """,
+            (id_profissional, id_sala, data_inicio, data_fim)
+        )
+        conn.commit()
+        return jsonify({"mensagem": "Agendamento realizado com sucesso"}), 201
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"erro": str(e)}), 400
+
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route("/agendamentos/cancelar", methods=["POST"])
+def cancelar_agendamento():
+    dados = request.get_json()
+    id_horario = dados.get("id_horario")
+
+    if not id_horario:
+        return jsonify({"erro": "id_horario é obrigatório"}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute(
+            """
+            UPDATE horario_reservado
+            SET status = 'CANCELADO'
+            WHERE id_horario = %s;
+            """,
+            (id_horario,)
+        )
+
+        if cur.rowcount == 0:
+            conn.rollback()
+            return jsonify({"erro": "Agendamento não encontrado"}), 404
+
+        conn.commit()
+        return jsonify({"mensagem": "Agendamento cancelado com sucesso"}), 200
+
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"erro": str(e)}), 400
+
+    finally:
+        cur.close()
+        conn.close()
+
+@app.route("/valor-mensal", methods=["GET"])
+def consultar_valor_mensal():
+    id_profissional = request.args.get("id_profissional")
+
+    if not id_profissional:
+        return jsonify({"erro": "id_profissional é obrigatório"}), 400
+
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        """
+        SELECT mes, total_horas, total_valor
+        FROM vw_valor_mensal
+        WHERE id_profissional = %s
+        ORDER BY mes;
+        """,
+        (id_profissional,)
+    )
+
+    dados = cur.fetchall()
+    cur.close()
+    conn.close()
+
+    resultado = []
+    for d in dados:
+        resultado.append({
+            "mes": str(d[0]),
+            "total_horas": float(d[1]),
+            "total_valor": float(d[2])
+        })
+
+    return jsonify(resultado)
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001)
