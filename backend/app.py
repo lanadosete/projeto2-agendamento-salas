@@ -1,11 +1,11 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from database.connection import get_connection
 
 app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return "Backend do Projeto 2 rodando"
+    return render_template("index.html")
 
 @app.route("/salas", methods=["GET"])
 def listar_salas():
