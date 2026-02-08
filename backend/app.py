@@ -26,8 +26,6 @@ def listar_salas():
 
     return jsonify(resultado)
 
-from flask import request
-
 @app.route("/salas/disponiveis", methods=["GET"])
 def salas_disponiveis():
     inicio = request.args.get("inicio")
