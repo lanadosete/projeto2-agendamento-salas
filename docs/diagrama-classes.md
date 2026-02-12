@@ -7,7 +7,7 @@ O sistema segue arquitetura Web com Backend em Flask e Banco de Dados PostgreSQL
 
 ---
 
-# 1️⃣ Classe: Profissional
+# Classe: Profissional
 
 Representa o usuário do sistema responsável por realizar agendamentos.
 
@@ -24,7 +24,7 @@ Representa o usuário do sistema responsável por realizar agendamentos.
 
 ---
 
-# 2️⃣ Classe: Sala
+# Classe: Sala
 
 Representa as salas disponíveis para sublocação.
 
@@ -40,7 +40,7 @@ Representa as salas disponíveis para sublocação.
 
 ---
 
-# 3️⃣ Classe: Recorrencia
+# Classe: Recorrencia
 
 Representa um padrão de agendamento recorrente criado pelo profissional.
 
@@ -67,7 +67,7 @@ Representa um padrão de agendamento recorrente criado pelo profissional.
 
 ---
 
-# 4️⃣ Classe: HorarioReservado
+# Classe: HorarioReservado
 
 Representa um horário efetivamente reservado no sistema.
 
@@ -98,7 +98,7 @@ Representa um horário efetivamente reservado no sistema.
 
 ---
 
-# 🔗 Relacionamentos Gerais
+# Relacionamentos Gerais
 
 - Profissional 1 ─── N HorarioReservado
 - Profissional 1 ─── N Recorrencia
@@ -107,7 +107,7 @@ Representa um horário efetivamente reservado no sistema.
 
 ---
 
-# ⚙️ Regras de Negócio Implementadas
+# Regras de Negócio Implementadas
 
 As regras abaixo não são apenas conceituais — elas estão implementadas no Banco de Dados via triggers:
 
@@ -119,7 +119,7 @@ Impede inserção ou atualização de horários sobrepostos na mesma sala.
 
 ---
 
-### ✔ Cancelamento com 24h de Antecedência
+### Cancelamento com 24h de Antecedência
 Implementado pela função:
 - fn_cancelamento_24h()
 
@@ -129,7 +129,7 @@ Permite cancelar apenas:
 
 ---
 
-# 🏗 Arquitetura
+# Arquitetura
 
 O sistema segue modelo:
 

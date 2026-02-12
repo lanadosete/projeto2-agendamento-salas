@@ -14,6 +14,7 @@ O sistema permite que um profissional:
 - Realize agendamentos avulsos
 - Realize agendamentos recorrentes
 - Cancele agendamentos avulsos respeitando antecedência mínima de 24 horas
+- Visualize seus agendamentos (ativos e histórico)
 - Consulte o valor mensal devido com base nas horas utilizadas
 
 O projeto é composto por:
@@ -36,7 +37,7 @@ Usuário responsável por:
 - Cancelar horários
 - Consultar valores mensais
 
-No MVP atual, o profissional é fixo (id_profissional = 1).
+No MVP atual, o profissional é fixo (`id_profissional = 1`).
 
 ---
 
@@ -78,17 +79,17 @@ O banco contém as seguintes estruturas:
 - id_recorrencia (PK)
 - id_profissional (FK)
 - dia_semana (INTEGER[])
-- hora_inicio
-- hora_fim
-- data_inicio
-- data_fim
+- hora_inicio (TIME)
+- hora_fim (TIME)
+- data_inicio (DATE)
+- data_fim (DATE)
 
 ### horario_reservado
 - id_horario (PK)
 - id_profissional (FK)
 - id_sala (FK)
-- data_inicio
-- data_fim
+- data_inicio (TIMESTAMPTZ)
+- data_fim (TIMESTAMPTZ)
 - tipo (AVULSO | RECORRENTE)
 - status (ATIVO | CANCELADO)
 - id_recorrencia (FK opcional)
@@ -140,6 +141,8 @@ Permite criar reservas periódicas com:
 
 O sistema gera automaticamente todas as ocorrências dentro do período definido.
 
+Se qualquer ocorrência gerar conflito, toda a operação é cancelada (rollback).
+
 ---
 
 ## 4. Cálculo Mensal Simulado
@@ -156,7 +159,7 @@ Pode ser consultado via:
 SELECT * FROM vw_valor_mensal;
 ```
 
-Ou pela interface web.
+Ou diretamente pela interface web.
 
 ---
 
@@ -173,7 +176,7 @@ São inseridas automaticamente pelo script SQL.
 
 # Execução do Projeto
 
-## Criar o Banco
+## 1. Criar o Banco
 
 Criar um banco chamado:
 
@@ -189,7 +192,7 @@ docs/sql/schema.sql
 
 ---
 
-## Criar Ambiente Virtual
+## 2. Criar Ambiente Virtual
 
 ```bash
 python -m venv venv
@@ -198,7 +201,7 @@ source venv/bin/activate   # Mac/Linux
 
 ---
 
-## Instalar Dependências
+## 3. Instalar Dependências
 
 ```bash
 pip install flask psycopg2
@@ -206,7 +209,7 @@ pip install flask psycopg2
 
 ---
 
-## Configurar Conexão
+## 4. Configurar Conexão
 
 Editar o arquivo:
 
@@ -218,7 +221,7 @@ Inserindo os dados corretos do PostgreSQL.
 
 ---
 
-## Executar o Sistema
+## 5. Executar o Sistema
 
 ```bash
 python app.py
@@ -251,7 +254,13 @@ http://localhost:5001
 │   ├── der.md
 │   ├── diagrama-classes.md
 │   ├── diagrama-sequencia.md
-│   └── sql/schema.sql
+│   ├── sql/
+│   │   └── schema.sql
+│   └── img-diagrams/
+│       ├── diagrama-caso-de-uso.png
+│       ├── diagrama-entidade-relacionamento.png
+│       ├── diagrama-de-classes.png
+│       └── diagrama-de-sequencia.png
 └── README.md
 ```
 
@@ -296,9 +305,9 @@ O repositório contém:
 
 # Desenvolvedores
 
-- Lana Lourrani
-- Leonardo Davi
-- Kildery Douglas
+- Lana Lourrani  
+- Leonardo Davi  
+- Kildery Douglas  
 
 ---
 

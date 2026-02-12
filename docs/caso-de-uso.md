@@ -3,14 +3,18 @@
 
 ---
 
-# 🎭 Ator Principal
+# Ator Principal
 
 **Profissional**  
 Usuário responsável por utilizar o sistema para realizar e gerenciar agendamentos de salas.
 
 ---
 
-# 📌 Caso de Uso 1 – Visualizar Salas Disponíveis
+# Casos de Uso Principais
+
+---
+
+# Caso de Uso 1 – Visualizar Salas Disponíveis
 
 ## Descrição
 Permite ao profissional visualizar todas as salas cadastradas no sistema.
@@ -29,7 +33,7 @@ Profissional
 
 ---
 
-# 📌 Caso de Uso 2 – Agendar Horário Avulso
+# Caso de Uso 2 – Agendar Horário Avulso
 
 ## Descrição
 Permite ao profissional reservar uma sala em um horário específico.
@@ -62,7 +66,7 @@ Profissional
 
 ---
 
-# 📌 Caso de Uso 3 – Agendar Horário Recorrente
+# Caso de Uso 3 – Agendar Horário Recorrente
 
 ## Descrição
 Permite ao profissional criar um padrão de agendamento repetido em dias específicos da semana.
@@ -103,7 +107,7 @@ Profissional
 
 ---
 
-# 📌 Caso de Uso 4 – Cancelar Agendamento
+# Caso de Uso 4 – Cancelar Agendamento
 
 ## Descrição
 Permite cancelar um agendamento avulso ativo.
@@ -133,7 +137,7 @@ Profissional
 
 ---
 
-# 📌 Caso de Uso 5 – Consultar Meus Agendamentos
+# Caso de Uso 5 – Consultar Meus Agendamentos
 
 ## Descrição
 Permite visualizar agendamentos filtrando por tipo.
@@ -152,7 +156,7 @@ Profissional
 
 ---
 
-# 📌 Caso de Uso 6 – Consultar Valor Mensal
+# Caso de Uso 6 – Consultar Valor Mensal
 
 ## Descrição
 Permite consultar o total mensal baseado nos agendamentos ativos.
@@ -169,47 +173,23 @@ Profissional
    - Total recorrentes
 4. O sistema exibe os valores.
 
-## Regra de Negócio
-- Apenas agendamentos com status ATIVO são considerados no cálculo.
+---
+
+# Regras de Negócio (Casos de Uso Internos do Sistema)
+
+As funcionalidades abaixo não são acionadas diretamente pelo ator,
+mas fazem parte do processamento interno do sistema.
 
 ---
 
-# 📌 Caso de Uso 7 – Visualizar Histórico
+## RN01 – Validação de Conflito
 
-## Descrição
-Permite visualizar:
-- Agendamentos cancelados
-- Agendamentos já finalizados
-
-## Ator
-Profissional
-
-## Fluxo Principal
-1. O profissional seleciona o filtro "Histórico".
-2. O sistema consulta registros cancelados ou expirados.
-3. O sistema exibe os dados.
+- Não é permitido inserir ou atualizar horários que se sobreponham a outro horário ATIVO da mesma sala.
 
 ---
 
-# 📌 Caso de Uso 8 – Validação de Conflito
+## RN02 – Validação de Datas e Dias da Semana
 
-## Descrição
-Garante que não existam reservas sobrepostas na mesma sala.
-
-## Ator
-Sistema
-
-## Regra
-- Não é permitido inserir ou atualizar horários que se sobreponham a outro ATIVO.
-
----
-
-# 📌 Caso de Uso 9 – Validação de Datas e Dias da Semana
-
-## Descrição
-Garante integridade nas recorrências.
-
-## Regras
 - Data final ≥ data inicial.
 - Data não pode estar no passado.
 - Pelo menos um dia da semana selecionado.
@@ -218,12 +198,10 @@ Garante integridade nas recorrências.
 
 ---
 
-# 📌 Caso de Uso 10 – Cálculo Automático do Valor Mensal
+## RN03 – Cálculo Automático do Valor Mensal
 
-## Descrição
-Calcula automaticamente o valor com base na duração do horário e no valor da sala.
+Fórmula aplicada:
 
-## Regra
 Valor = (Horas Utilizadas) × (Valor da Sala)
 
----
+Apenas agendamentos com status **ATIVO** são considerados.
