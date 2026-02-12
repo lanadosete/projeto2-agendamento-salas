@@ -1,7 +1,7 @@
 # Diagrama de Classes  
 ## Projeto 2 – Sistema de Gestão de Agendamento de Sublocação de Salas
 
-O Diagrama de Classes representa a estrutura estática do sistema, evidenciando as principais entidades persistidas no banco de dados, seus atributos e os relacionamentos existentes entre elas.
+O Diagrama de Classes representa a estrutura estática do sistema, evidenciando as principais classes persistidas no banco de dados, seus atributos e os relacionamentos existentes entre elas.
 
 O sistema segue arquitetura Web com Backend em Flask e Banco de Dados PostgreSQL.
 
@@ -9,18 +9,18 @@ O sistema segue arquitetura Web com Backend em Flask e Banco de Dados PostgreSQL
 
 # Classe: Profissional
 
-Representa o usuário do sistema responsável por realizar agendamentos.
+Representa o usuário do sistema responsável por realizar e gerenciar agendamentos.
 
 ## Atributos
 
-- id_profissional : BIGSERIAL (PK)
-- nome : VARCHAR(120)
-- email : VARCHAR(120) (único)
+- id_profissional : Integer (PK)
+- nome : String
+- email : String (único)
 
 ## Relacionamentos
 
 - Um Profissional pode possuir vários HorarioReservado.
-- Um Profissional pode possuir várias Recorrencias.
+- Um Profissional pode possuir várias Recorrencia.
 
 ---
 
@@ -30,9 +30,9 @@ Representa as salas disponíveis para sublocação.
 
 ## Atributos
 
-- id_sala : BIGSERIAL (PK)
-- nome : VARCHAR(50) (único)
-- valor_hora : NUMERIC(10,2)
+- id_sala : Integer (PK)
+- nome : String (único)
+- valor_hora : Decimal
 
 ## Relacionamentos
 
@@ -46,19 +46,19 @@ Representa um padrão de agendamento recorrente criado pelo profissional.
 
 ## Atributos
 
-- id_recorrencia : BIGSERIAL (PK)
-- id_profissional : BIGINT (FK → Profissional)
-- dia_semana : INTEGER[]  
-  (array contendo os dias da semana selecionados)
-- hora_inicio : TIME
-- hora_fim : TIME
-- data_inicio : DATE
-- data_fim : DATE
+- id_recorrencia : Integer (PK)
+- dia_semana : List<Integer>  
+  (0 = Domingo, 1 = Segunda, ..., 6 = Sábado)
+- hora_inicio : Time
+- hora_fim : Time
+- data_inicio : Date
+- data_fim : Date
 
-## Regras
+## Regras de Integridade
 
 - hora_fim > hora_inicio
 - data_fim ≥ data_inicio
+- Pelo menos um dia da semana deve ser informado
 
 ## Relacionamentos
 
@@ -73,22 +73,17 @@ Representa um horário efetivamente reservado no sistema.
 
 ## Atributos
 
-- id_horario : BIGSERIAL (PK)
-- id_profissional : BIGINT (FK → Profissional)
-- id_sala : BIGINT (FK → Sala)
-- data_inicio : TIMESTAMPTZ
-- data_fim : TIMESTAMPTZ
-- tipo : VARCHAR(12)  
-  (AVULSO | RECORRENTE)
-- status : VARCHAR(12)  
-  (ATIVO | CANCELADO)
-- id_recorrencia : BIGINT (FK → Recorrencia, opcional)
+- id_horario : Integer (PK)
+- data_inicio : DateTime
+- data_fim : DateTime
+- tipo : Enum (AVULSO | RECORRENTE)
+- status : Enum (ATIVO | CANCELADO)
 
-## Regras
+## Regras de Integridade
 
 - data_fim > data_inicio
-- Se tipo = AVULSO → id_recorrencia deve ser NULL
-- Se tipo = RECORRENTE → id_recorrencia não pode ser NULL
+- Se tipo = AVULSO → não possui Recorrencia associada
+- Se tipo = RECORRENTE → deve estar associado a uma Recorrencia
 
 ## Relacionamentos
 
@@ -98,7 +93,7 @@ Representa um horário efetivamente reservado no sistema.
 
 ---
 
-# Relacionamentos Gerais
+# Relacionamentos e Cardinalidades
 
 - Profissional 1 ─── N HorarioReservado
 - Profissional 1 ─── N Recorrencia
@@ -107,35 +102,31 @@ Representa um horário efetivamente reservado no sistema.
 
 ---
 
-# Regras de Negócio Implementadas
+# Regras de Negócio Implementadas no Banco
 
-As regras abaixo não são apenas conceituais — elas estão implementadas no Banco de Dados via triggers:
+As seguintes regras estão implementadas no PostgreSQL por meio de triggers:
 
 ### ✔ Bloqueio de Conflito de Horário
-Implementado pela função:
-- fn_bloquear_conflito()
+Função: `fn_bloquear_conflito()`
 
-Impede inserção ou atualização de horários sobrepostos na mesma sala.
+Impede inserção ou atualização de horários sobrepostos na mesma sala quando o status é ATIVO.
 
 ---
 
-### Cancelamento com 24h de Antecedência
-Implementado pela função:
-- fn_cancelamento_24h()
+### ✔ Cancelamento com 24h de Antecedência
+Função: `fn_cancelamento_24h()`
 
 Permite cancelar apenas:
-- Agendamentos AVULSOS
+- Agendamentos do tipo AVULSO
 - Com pelo menos 24 horas de antecedência
 
 ---
 
-# Arquitetura
-
-O sistema segue modelo:
+# Arquitetura do Sistema
 
 Profissional  
-→ Interface Web (HTML/CSS/JS)  
-→ Backend Flask  
-→ PostgreSQL  
+→ Interface Web (HTML / CSS / JavaScript)  
+→ Backend (Flask - Python)  
+→ Banco de Dados (PostgreSQL)
 
 ---
