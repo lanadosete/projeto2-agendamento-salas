@@ -6,6 +6,6 @@ def get_connection():
         host="localhost",
         port=os.getenv("PGPORT", "5432"),
         database=os.getenv("PGDATABASE", "agendamento_salas"),
-        user=os.getenv("PGUSER", "postgres"),
-        password=os.getenv("PGPASSWORD")
+        user=os.getenv("PGUSER", "miguelangelo"),
+        password=os.getenv("PGPASSWORD", "")
     )

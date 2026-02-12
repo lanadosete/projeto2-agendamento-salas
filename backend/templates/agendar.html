@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Agendar Sala</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <header>
+        <a href="/" style="text-decoration: none; color: white;">
+            <h1>Agendamento de Sala</h1><a />
+            <p>Confirme os dados do seu agendamento</p>
+    </header>
+
+    <main>
+        <section class="agendamento-container">
+
+            <div class="card agendamento-card">
+                <h2>{{ sala.nome }}</h2>
+
+                <p class="valor-hora">
+                    Valor por hora: <strong>R$ {{ sala.valor_hora }}</strong>
+                </p>
+
+                <form class="form-agendamento" id="form-agendamento">
+
+                    <div class="campo-caixa">
+                        <label>
+                            <input type="checkbox" id="recorrente">
+                            Agendamento recorrente
+                        </label>
+                    </div>
+                    <div id="caixa-dias" style="display:none;">
+                    <div class="campo-caixa">
+                        <label>Dias da semana</label>
+                        <label><input type="checkbox" name="dias-semana" value="1"> Segunda</label>
+                        <label><input type="checkbox" name="dias-semana" value="2"> Terça</label>
+                        <label><input type="checkbox" name="dias-semana" value="3"> Quarta</label>
+                        <label><input type="checkbox" name="dias-semana" value="4"> Quinta</label>
+                        <label><input type="checkbox" name="dias-semana" value="5"> Sexta</label>
+                    </div>
+                    </div>
+
+                    <div class="campo-caixa">
+                        <label>Data do agendamento</label>
+                        <input type="date" id="data_agendamento" required>
+                    </div>
+
+                    <div id="campos-recorrencia" style="display:none;">
+                        <div class="campo-caixa">
+                            <label>Data final da recorrência</label>
+                            <input type="date" id="data_fim_recorrencia">
+                        </div>
+                    </div>
+
+                    <div class="campo-caixa">
+                        <label>Hora de início</label>
+                        <input type="time" id="hora_inicio" required>
+                    </div>
+
+                    <div class="campo-caixa">
+                        <label>Hora de fim</label>
+                        <input type="time" id="hora_fim" required>
+                    </div>
+
+
+                    <button type="submit" class="btn-confirmar">
+                        Confirmar Agendamento
+                    </button>
+                    <button type="button" id="voltar-home2" class="btn-secondary">
+                        Voltar para o início
+                    </button>
+
+                </form>
+            </div>
+
+        </section>
+    </main>
+
+    <footer>
+        <p>Desenvolvido por Lana Lourrani, Leonardo Davi e Kildery Douglas</p>
+    </footer>
+
+    <!-- MODAL SUCESSO -->
+    <div class="modal" id="modal-sucesso">
+        <div class="modal-conteudo modal-sucesso">
+            <div class="modal-imagem">
+                <img src="{{ url_for('static', filename='img/icone-confirmado.png') }}">
+            </div>
+
+            <p style="text-align:center; margin:30px 0;">
+                Agendamento realizado com sucesso!
+            </p>
+
+            <button type="button" class="btn-voltar" id="voltar-home">
+                Voltar para o início
+            </button>
+        </div>
+    </div>
+
+    <script>
+
+        /* ✅ CORREÇÃO MÍNIMA */
+        const ID_SALA = Number("{{ sala.id_sala }}");
+
+        const form = document.getElementById("form-agendamento");
+        const chkRecorrente = document.getElementById("recorrente");
+        const camposRecorrencia = document.getElementById("campos-recorrencia");
+        const caixaDias = document.getElementById("caixa-dias");
+        const modalSucesso = document.getElementById("modal-sucesso");
+        const dataInicio = document.getElementById("data_agendamento");
+        const dataFim = document.getElementById("data_fim_recorrencia");
+
+        function getDiasSelecionados() {
+            const checkboxes = document.querySelectorAll("#caixa-dias input[type=checkbox]:checked");
+            return Array.from(checkboxes).map(cb => parseInt(cb.value));
+        }
+        function validarData(inputData) {
+            const validarDias = document.getElementById('recorrente');
+
+            if (!validarDias.checked) {
+
+                return true;
+            }
+            const diasPermitidos = getDiasSelecionados();
+
+            if (diasPermitidos.length === 0) {
+                mostrarToast('Selecione pelo menos um dia da semana');
+                inputData.value = '';
+                return false;
+            }
+
+            if (!inputData.value) {
+                return true;
+            }
+
+            const selectedDate = new Date(inputData.value + 'T00:00:00');
+            const dayOfWeek = selectedDate.getDay();
+
+            if (!diasPermitidos.includes(dayOfWeek)) {
+                const nomeDias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+                const diasNomes = diasPermitidos.map(d => nomeDias[d]).join(', ');
+                inputData.value = '';
+                mostrarToast(`Data não permitida. Dias permitidos: ${diasNomes}`);
+
+                return false;
+            }
+
+            return true;
+        }
+        dataInicio.addEventListener('change', function () {
+            validarData(dataInicio);
+        });
+
+        dataFim.addEventListener('change', function () {
+            validarData(dataFim);
+        });
+
+        chkRecorrente.addEventListener("change", () => {
+            camposRecorrencia.style.display = chkRecorrente.checked ? "block" : "none";
+            caixaDias.style.display = chkRecorrente.checked ? "block" : "none";
+        });
+
+        form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+
+            const dataAgendamento = document.getElementById("data_agendamento").value;
+            const horaInicio = document.getElementById("hora_inicio").value;
+            const horaFim = document.getElementById("hora_fim").value;
+
+            let response;
+
+            if (chkRecorrente.checked) {
+
+
+                const dataFimRecorrencia = document.getElementById("data_fim_recorrencia").value;
+
+                if (!dataFimRecorrencia) {
+                    mostrarToast("Informe a data final da recorrência.");
+                    return;
+                }
+
+                const diasSemana = Array.from(
+                    document.querySelectorAll("#caixa-dias input[type=checkbox]:checked")
+                ).map(cb => Number(cb.value));
+
+                if (diasSemana.length === 0) {
+                    mostrarToast("Selecione pelo menos um dia da semana.");
+                    return;
+                }
+                const validaInicio = validarData(dataInicio);
+                const validaFim = validarData(dataFim);
+                if (validaInicio && validaFim) {
+
+
+
+                    response = await fetch("/agendamentos/recorrente", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            id_profissional: 1,
+                            id_sala: ID_SALA,
+                            data_inicio: dataAgendamento,
+                            data_fim: dataFimRecorrencia,
+                            hora_inicio: horaInicio,
+                            hora_fim: horaFim,
+                            dias_semana: diasSemana
+                        })
+                    });
+                }
+
+            } else {
+                response = await fetch("/agendamentos/avulso", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        id_profissional: 1,
+                        id_sala: ID_SALA,
+                        inicio: dataAgendamento + " " + horaInicio,
+                        fim: dataAgendamento + " " + horaFim
+                    })
+                });
+            }
+
+            const resultado = await response.json();
+
+            if (!response.ok) {
+                mostrarToast(resultado.erro || "Erro ao realizar agendamento.");
+                return;
+            }
+
+            modalSucesso.style.display = "block";
+        });
+
+        document.getElementById("voltar-home").addEventListener("click", () => {
+            window.location.href = "/";
+        });
+        document.getElementById("voltar-home2").addEventListener("click", () => {
+            window.location.href = "/";
+        });
+
+
+        /* ===== TOAST DE ERRO ===== */
+        function mostrarToast(mensagem) {
+            const toast = document.createElement("div");
+            toast.className = "toast-erro";
+            toast.textContent = mensagem;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => toast.classList.add("mostrar"), 50);
+
+            setTimeout(() => {
+                toast.classList.remove("mostrar");
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+    </script>
+
+</body>
+
+</html>

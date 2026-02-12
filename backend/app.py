@@ -20,7 +20,6 @@ def existe_conflito(cur, id_sala, inicio, fim):
     """, (id_sala, inicio, fim))
     return cur.fetchone() is not None
 
-
 # =========================
 # HOME
 # =========================
@@ -28,7 +27,6 @@ def existe_conflito(cur, id_sala, inicio, fim):
 @app.route("/")
 def index():
     return render_template("index.html")
-
 
 # =========================
 # SALAS
@@ -49,7 +47,6 @@ def listar_salas():
         {"id_sala": s[0], "nome": s[1], "valor_hora": float(s[2])}
         for s in salas
     ])
-
 
 # =========================
 # AGENDAMENTO AVULSO
@@ -92,12 +89,16 @@ def agendar_avulso():
 
     except Exception as e:
         conn.rollback()
-        return jsonify({"erro": str(e)}), 400
+        mensagem = str(e)
+
+        if hasattr(e, "pgerror") and e.pgerror:
+            mensagem = e.pgerror.split("CONTEXT:")[0].strip()
+
+        return jsonify({"erro": mensagem}), 400
 
     finally:
         cur.close()
         conn.close()
-
 
 # =========================
 # AGENDAMENTO RECORRENTE
@@ -111,6 +112,13 @@ def agendar_recorrente():
     id_sala = dados["id_sala"]
     data_inicio = datetime.fromisoformat(dados["data_inicio"])
     data_fim = datetime.fromisoformat(dados["data_fim"])
+
+# Validação: data final não pode ser menor que inicial
+    if data_fim.date() < data_inicio.date():
+        return jsonify({
+            "erro": "A data final da recorrência deve ser maior ou igual à data inicial."
+        }), 400
+
     hora_inicio = dados["hora_inicio"]
     hora_fim = dados["hora_fim"]
     dias_semana = dados["dias_semana"]
@@ -128,39 +136,65 @@ def agendar_recorrente():
 
     conn = get_connection()
     cur = conn.cursor()
+   
+   
+    dias_int = [int(d) for d in dias_semana]
 
     try:
+        cur.execute("""
+            INSERT INTO recorrencia
+            (id_profissional, dia_semana, hora_inicio, hora_fim, data_inicio, data_fim)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            RETURNING id_recorrencia;
+        """, (
+            id_profissional,
+            dias_int,
+            hora_inicio,
+            hora_fim,
+            data_inicio.date(),
+            data_fim.date()
+        ))
+        id_recorrencia = cur.fetchone()[0]
         for dia in dias_semana:
 
-            # ✅ INSERT CORRETO (COM id_profissional)
-            cur.execute("""
-                INSERT INTO recorrencia
-                (id_profissional, dia_semana, hora_inicio, hora_fim, data_inicio, data_fim)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                RETURNING id_recorrencia;
-            """, (
-                id_profissional,
-                dia,
-                hora_inicio,
-                hora_fim,
-                data_inicio.date(),
-                data_fim.date()
-            ))
+            # cur.execute("""
+            #     INSERT INTO recorrencia
+            #     (id_profissional, dia_semana, hora_inicio, hora_fim, data_inicio, data_fim)
+            #     VALUES (%s, %s, %s, %s, %s, %s)
+            #     RETURNING id_recorrencia;
+            # """, (
+            #     id_profissional,
+            #     dia,
+            #     hora_inicio,
+            #     hora_fim,
+            #     data_inicio.date(),
+            #     data_fim.date()
+            # ))
 
-            id_recorrencia = cur.fetchone()[0]
+            # id_recorrencia = cur.fetchone()[0]
             atual = data_inicio
 
             while atual.date() <= data_fim.date():
-                if atual.weekday() == dia:
+
+                # Python: 0=Seg, 1=Ter, ..., 6=Dom
+                dia_python = atual.weekday()
+
+                # Converter para padrão banco: 0=Dom, 1=Seg, ..., 6=Sáb
+                dia_banco = (dia_python + 1) % 7
+
+                if dia_banco == dia:
+
                     inicio_dt = atual.replace(
                         hour=int(hora_inicio[:2]),
                         minute=int(hora_inicio[3:])
                     )
+
                     fim_dt = atual.replace(
                         hour=int(hora_fim[:2]),
                         minute=int(hora_fim[3:])
                     )
 
+                    # ✅ CORREÇÃO CRÍTICA: bloqueia conflito com AVULSO e RECORRENTE
                     if existe_conflito(cur, id_sala, inicio_dt, fim_dt):
                         conn.rollback()
                         return jsonify({
@@ -178,6 +212,7 @@ def agendar_recorrente():
                         fim_dt,
                         id_recorrencia
                     ))
+
                 atual += timedelta(days=1)
 
         conn.commit()
@@ -190,7 +225,6 @@ def agendar_recorrente():
     finally:
         cur.close()
         conn.close()
-
 
 # =========================
 # LISTAR AGENDAMENTOS
@@ -209,6 +243,7 @@ def listar_agendamentos():
             FROM horario_reservado hr
             JOIN sala s ON s.id_sala = hr.id_sala
             WHERE hr.tipo = 'AVULSO'
+              AND hr.status = 'ATIVO'
             ORDER BY hr.data_inicio DESC;
         """)
         dados = cur.fetchall()
@@ -222,45 +257,70 @@ def listar_agendamentos():
 
     elif filtro == "RECORRENTE":
         cur.execute("""
-            SELECT r.id_recorrencia, s.nome,
-                   r.dia_semana, r.hora_inicio, r.hora_fim,
-                   r.data_inicio, r.data_fim
+            SELECT 
+                r.id_recorrencia,
+                s.nome,
+                TO_CHAR(MIN(r.data_inicio), 'DD/MM/YYYY'),
+                TO_CHAR(MAX(r.data_fim), 'DD/MM/YYYY'),
+                r.hora_inicio,
+                r.hora_fim,
+                ARRAY(
+                SELECT CASE num
+                    WHEN 0 THEN 'Domingo'
+                    WHEN 1 THEN 'Segunda-feira'
+                    WHEN 2 THEN 'Terça-feira'
+                    WHEN 3 THEN 'Quarta-feira'
+                    WHEN 4 THEN 'Quinta-feira'
+                    WHEN 5 THEN 'Sexta-feira'
+                    WHEN 6 THEN 'Sábado'
+                END
+                FROM unnest(dia_semana) AS num
+                ) AS dias,
+                MIN(r.data_criacao) AS criado_em
             FROM recorrencia r
-            JOIN horario_reservado hr ON hr.id_recorrencia = r.id_recorrencia
-            JOIN sala s ON s.id_sala = hr.id_sala
+            JOIN horario_reservado hr 
+                ON hr.id_recorrencia = r.id_recorrencia
+            JOIN sala s 
+                ON s.id_sala = hr.id_sala
             WHERE hr.status = 'ATIVO'
-            GROUP BY r.id_recorrencia, s.nome,
-                     r.dia_semana, r.hora_inicio, r.hora_fim,
-                     r.data_inicio, r.data_fim;
+            GROUP BY 
+                r.id_recorrencia,
+                s.nome,
+                r.hora_inicio,
+                r.hora_fim
+            ORDER BY MIN(r.data_criacao) DESC;
         """)
-        dados = cur.fetchall()
-        resultado = [{
-            "id": d[0],
-            "sala": d[1],
-            "descricao": f"Recorrente ({d[5]} até {d[6]}) {d[3]}–{d[4]}",
-            "status": "ATIVO",
-            "tipo": "RECORRENTE"
-        } for d in dados]
 
-    else:
-        cur.execute("""
-            SELECT DISTINCT
-                COALESCE(hr.id_recorrencia, hr.id_horario),
-                s.nome, hr.tipo, hr.status, hr.data_inicio, hr.data_fim
-            FROM horario_reservado hr
-            JOIN sala s ON s.id_sala = hr.id_sala
-            WHERE hr.status = 'CANCELADO'
-               OR hr.data_fim < NOW()
-            ORDER BY hr.data_inicio DESC;
-        """)
         dados = cur.fetchall()
+
         resultado = [{
             "id": d[0],
             "sala": d[1],
-            "descricao": f"{d[4]} → {d[5]}",
-            "status": d[3],
-            "tipo": d[2]
+            "descricao": f"{d[2]} até {d[3]} | {d[4]}–{d[5]} | Dias: {' - '.join(d[6])}",
+            "status": "ATIVO",
+            "tipo": "RECORRENTE",
+            "criado_em": d[7]
         } for d in dados]
+        
+    else:
+            cur.execute("""
+                SELECT DISTINCT
+                    COALESCE(hr.id_recorrencia, hr.id_horario),
+                    s.nome, hr.tipo, hr.status, hr.data_inicio, hr.data_fim
+                FROM horario_reservado hr
+                JOIN sala s ON s.id_sala = hr.id_sala
+                WHERE hr.status = 'CANCELADO'
+                OR hr.data_fim < NOW()
+                ORDER BY hr.data_inicio DESC;
+            """)
+            dados = cur.fetchall()
+            resultado = [{
+                "id": d[0],
+                "sala": d[1],
+                "descricao": f"{d[4]} → {d[5]}",
+                "status": d[3],
+                "tipo": d[2]
+            } for d in dados]
 
     cur.close()
     conn.close()
@@ -291,16 +351,14 @@ def cancelar_agendamento():
         """, (id_horario,))
 
         if cur.rowcount == 0:
-            return jsonify({
-                "erro": "Agendamento não encontrado ou não pode ser cancelado."
-            }), 400
+            return jsonify({"erro": "Agendamento não encontrado ou não pode ser cancelado."}), 400
 
         conn.commit()
         return jsonify({"mensagem": "Agendamento cancelado com sucesso."})
 
     except Exception as e:
         conn.rollback()
-        return jsonify({"erro": str(e)}), 400
+        return jsonify({"erro": str(e).split("\n")[0]}), 400
 
     finally:
         cur.close()
@@ -365,7 +423,6 @@ def valor_mensal_detalhado():
         "recorrente": float(total_recorrente)
     })
 
-
 # =========================
 # TELA DE AGENDAR
 # =========================
@@ -392,7 +449,6 @@ def agendar_sala(id_sala):
         "nome": sala[1],
         "valor_hora": float(sala[2])
     })
-
 
 # =========================
 # MAIN

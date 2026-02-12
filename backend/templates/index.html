@@ -2,50 +2,139 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Sistema de Agendamento de Salas</title>
+    <title>Sistema de Agendamento</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-    <header>
-        <h1>Sistema de Agendamento de Salas</h1>
-        <p>Sublocação de salas — Projeto Integrado I</p>
-    </header>
+<header>
+    <h1>Sistema de Gestão de Agendamentos</h1>
+    <p>Sublocação de salas — Projeto Integrado I</p>
+</header>
 
-    <main>
+<main>
     <section class="grid">
 
         <div class="card">
-            <h2>Visualizar Salas</h2>
-            <p>Exibe as salas disponíveis para sublocação.</p>
-            <button disabled>Visualizar</button>
+            <div class="card-imagem">
+                <img src="{{ url_for('static', filename='img/icone-listar-salas.png') }}">
+            </div>
+            <h2>Visualizar Salas Disponíveis</h2>
+            <button id="btn-salas">Ver</button>
         </div>
 
         <div class="card">
-            <h2>Agendar Horário</h2>
-            <p>Permite realizar o agendamento de um horário em uma sala.</p>
-            <button disabled>Agendar</button>
+            <div class="card-imagem">
+                <img src="{{ url_for('static', filename='img/icone-meus-agendamentos.png') }}">
+            </div>
+            <h2>Meus Agendamentos</h2>
+            <button id="btn-agendamentos">Ver</button>
         </div>
 
         <div class="card">
-            <h2>Cancelar Agendamento</h2>
-            <p>Permite cancelar um agendamento respeitando as regras.</p>
-            <button disabled>Cancelar</button>
-        </div>
-
-        <div class="card">
+            <div class="card-imagem">
+                <img src="{{ url_for('static', filename='img/icone-valor-mensal.png') }}">
+            </div>
             <h2>Consultar Valor Mensal</h2>
-            <p>Consulta o valor total mensal baseado nos horários utilizados.</p>
-            <button disabled>Consultar</button>
+            <button id="btn-valor-mensal">Ver</button>
         </div>
 
     </section>
 </main>
 
+<footer>
+    <p>Desenvolvido por Lana Lourrani, Leonardo Davi e Kildery Douglas</p>
+</footer>
 
-    <footer>
-        <p>Projeto 2 — Sistemas de Informação</p>
-    </footer>
+<!-- MODAL SALAS -->
+<div id="modal-salas" class="modal">
+    <div class="modal-conteudo">
+        <h2>Salas Disponíveis</h2>
+        <div id="lista-salas-modal"></div>
+        <button class="btn-voltar" id="voltar-salas">Voltar</button>
+    </div>
+</div>
 
+<!-- MODAL AGENDAMENTOS -->
+<div id="modal-agendamentos" class="modal">
+    <div class="modal-conteudo modal-agendamentos">
+
+        <h2>Meus Agendamentos</h2>
+
+        <div style="text-align:center; margin-bottom:20px;">
+            <label>
+                <input type="radio" name="filtro-agendamento" value="AVULSO" checked>
+                Avulsos
+            </label>
+
+            <label style="margin-left:15px;">
+                <input type="radio" name="filtro-agendamento" value="RECORRENTE">
+                Recorrentes
+            </label>
+
+            <label style="margin-left:15px;">
+                <input type="radio" name="filtro-agendamento" value="HISTORICO">
+                Histórico
+            </label>
+        </div>
+
+        <div id="lista-agendamentos"></div>
+
+        <button class="btn-voltar" id="voltar-agendamentos">Voltar</button>
+    </div>
+</div>
+
+<!-- MODAL VALOR MENSAL -->
+<div id="modal-valor-mensal" class="modal">
+    <div class="modal-conteudo modal-valor">
+
+        <h2>Resumo Mensal</h2>
+
+        <!-- seletor de mês -->
+        <input
+            type="month"
+            id="mes-selecionado"
+            style="margin-bottom:15px; padding:6px;"
+        >
+
+        <div id="lista-valor-mensal" class="valor-scroll"></div>
+
+        <button class="btn-voltar" id="voltar-valor-mensal">
+            Voltar
+        </button>
+    </div>
+</div>
+
+<!-- MODAIS DE CANCELAMENTO -->
+<div class="modal" id="modal-confirmar-cancelamento">
+    <div class="modal-conteudo modal-sucesso">
+        <p style="text-align:center; margin:30px 0;">
+            Deseja realmente cancelar este agendamento?
+        </p>
+
+        <div style="display:flex; justify-content:center; gap:15px;">
+            <button id="btn-confirmar-cancelamento">Sim, cancelar</button>
+            <button class="btn-voltar" id="btn-fechar-cancelamento">Não</button>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="modal-cancelado-sucesso">
+    <div class="modal-conteudo modal-sucesso">
+        <div class="modal-imagem">
+            <img src="{{ url_for('static', filename='img/icone-confirmado.png') }}">
+        </div>
+
+        <p style="text-align:center; margin:30px 0;">
+            Agendamento cancelado com sucesso!
+        </p>
+
+        <button class="btn-voltar" id="btn-fechar-cancelado">
+            Voltar
+        </button>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>

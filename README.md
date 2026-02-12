@@ -1,99 +1,315 @@
 # Projeto 2 – Sistema de Gestão de Agendamento de Sublocação de Salas
 
-Projeto desenvolvido como MVP (Produto Mínimo Viável) para a disciplina Projeto Integrado I do curso de Sistemas de Informação da UFPA – Campus Cametá.
+Projeto desenvolvido como **MVP (Produto Mínimo Viável)** para a disciplina **Projeto Integrado I**, do curso de **Sistemas de Informação – UFPA Campus Cametá**.
 
 O sistema tem como objetivo permitir o agendamento de salas para sublocação, aplicando regras de negócio para evitar conflitos de horários e realizar o cálculo mensal de valores de forma simulada.
 
-## Funcionalidades do Sistema
+---
 
-- Visualização das salas disponíveis
-- Agendamento de horários avulsos
-- Agendamento de horários recorrentes
-- Cancelamento de agendamentos avulsos com antecedência mínima de 24 horas
-- Consulta do valor mensal devido com base nos horários utilizados (simulado)
+# Visão Geral
 
-## Ator do Sistema
+O sistema permite que um profissional:
 
-- Profissional: usuário responsável por visualizar salas, realizar agendamentos, cancelar horários e consultar o valor mensal.
+- Visualize salas disponíveis
+- Realize agendamentos avulsos
+- Realize agendamentos recorrentes
+- Cancele agendamentos avulsos respeitando antecedência mínima de 24 horas
+- Consulte o valor mensal devido com base nas horas utilizadas
 
-## Tecnologias Utilizadas
+O projeto é composto por:
 
+- Interface Web (Frontend – HTML, CSS, JavaScript)
+- Backend em Python com Flask
+- Banco de Dados PostgreSQL
+- Regras de negócio implementadas no banco (Triggers e Constraints)
+
+---
+
+# Ator do Sistema
+
+## Profissional
+
+Usuário responsável por:
+
+- Visualizar salas
+- Realizar agendamentos
+- Cancelar horários
+- Consultar valores mensais
+
+No MVP atual, o profissional é fixo (id_profissional = 1).
+
+---
+
+# Tecnologias Utilizadas
+
+## Backend
+- Python 3
+- Flask
+
+## Frontend
+- HTML5
+- CSS3
+- JavaScript
+
+## Banco de Dados
 - PostgreSQL
 - pgAdmin 4
 - SQL (PostgreSQL)
 
-Não foi utilizada API ou interface gráfica neste MVP, conforme escopo do Projeto 2.
+---
 
-## Banco de Dados (PostgreSQL)
+# 🗄 Estrutura do Banco de Dados
 
-### Pré-requisitos
+O banco contém as seguintes estruturas:
 
-- PostgreSQL instalado
-- pgAdmin 4
+## Tabelas
 
-### Criação do banco e das tabelas
+### profissional
+- id_profissional (PK)
+- nome
+- email
 
-1. Abra o pgAdmin 4
-2. Conecte-se ao servidor PostgreSQL
-3. Crie um banco de dados com o nome:
+### sala
+- id_sala (PK)
+- nome
+- valor_hora
 
-agendamento_salas
+### recorrencia
+- id_recorrencia (PK)
+- id_profissional (FK)
+- dia_semana (INTEGER[])
+- hora_inicio
+- hora_fim
+- data_inicio
+- data_fim
 
-4. Selecione o banco criado
-5. Clique em Ferramenta de Consulta
-6. Execute o script SQL disponível em:
+### horario_reservado
+- id_horario (PK)
+- id_profissional (FK)
+- id_sala (FK)
+- data_inicio
+- data_fim
+- tipo (AVULSO | RECORRENTE)
+- status (ATIVO | CANCELADO)
+- id_recorrencia (FK opcional)
 
-docs/sql/schema.sql
+---
 
-Após a execução, serão criadas as seguintes tabelas:
-- profissional
-- sala
-- recorrencia
-- horario_reservado
+## View
 
-E a view:
-- vw_valor_mensal
+### vw_valor_mensal
 
-## Salas do Sistema
+Responsável por calcular:
 
-As salas do sistema são fixas, conforme o escopo do projeto:
-- Sala 1
-- Sala 2
+- Total de horas utilizadas por mês
+- Valor total devido com base no valor/hora da sala
 
-Essas salas são inseridas automaticamente pelo script SQL.
+---
 
-Para conferência:
-SELECT * FROM sala;
+# ⚙ Regras de Negócio
 
-## Regras de Negócio Implementadas
+## 1. Bloqueio de Conflito de Horário
 
-- Bloqueio de conflito de horário: não é permitido realizar dois agendamentos sobrepostos para a mesma sala.
-- Cancelamento de agendamento avulso: permitido apenas com antecedência mínima de 24 horas.
-- Cálculo mensal simulado: o valor mensal é calculado com base no total de horas utilizadas e no valor/hora da sala.
+Não é permitido realizar dois agendamentos sobrepostos para a mesma sala.
 
-As regras de negócio são implementadas diretamente no banco de dados, utilizando triggers e views.
+Implementado por:
 
-## Consulta do Valor Mensal
+- Trigger `fn_bloquear_conflito`
+- Validação adicional no backend
 
-Para consultar o valor mensal devido por um profissional:
+---
+
+## 2. Cancelamento com 24h de Antecedência
+
+O cancelamento é permitido apenas para agendamentos avulsos e deve respeitar antecedência mínima de 24 horas.
+
+Implementado por:
+
+- Trigger `fn_cancelamento_24h`
+
+---
+
+## 3. Agendamento Recorrente
+
+Permite criar reservas periódicas com:
+
+- Data inicial
+- Data final
+- Horário fixo
+- Lista de dias da semana (armazenados em ARRAY)
+
+O sistema gera automaticamente todas as ocorrências dentro do período definido.
+
+---
+
+## 4. Cálculo Mensal Simulado
+
+O valor mensal é calculado com base em:
+
+```
+(total de horas utilizadas) × (valor/hora da sala)
+```
+
+Pode ser consultado via:
+
+```sql
 SELECT * FROM vw_valor_mensal;
+```
 
-A consulta retorna o mês de referência, o total de horas utilizadas e o valor total calculado (simulado).
+Ou pela interface web.
 
-## Documentação do Projeto
+---
+
+# Salas do Sistema
+
+As salas são fixas no MVP:
+
+- Sala 1 – R$ 100,00/hora
+- Sala 2 – R$ 120,00/hora
+
+São inseridas automaticamente pelo script SQL.
+
+---
+
+# Execução do Projeto
+
+## Criar o Banco
+
+Criar um banco chamado:
+
+```
+agendamento_salas
+```
+
+Executar o script SQL localizado em:
+
+```
+docs/sql/schema.sql
+```
+
+---
+
+## Criar Ambiente Virtual
+
+```bash
+python -m venv venv
+source venv/bin/activate   # Mac/Linux
+```
+
+---
+
+## Instalar Dependências
+
+```bash
+pip install flask psycopg2
+```
+
+---
+
+## Configurar Conexão
+
+Editar o arquivo:
+
+```
+database/connection.py
+```
+
+Inserindo os dados corretos do PostgreSQL.
+
+---
+
+## Executar o Sistema
+
+```bash
+python app.py
+```
+
+O sistema será iniciado em:
+
+```
+http://localhost:5001
+```
+
+---
+
+# 📂 Estrutura do Projeto
+
+```
+├── app.py
+├── database/
+│   └── connection.py
+├── templates/
+│   ├── index.html
+│   └── agendar.html
+├── static/
+│   ├── style.css
+│   ├── script.js
+│   └── img/
+├── docs/
+│   ├── requisitos.md
+│   ├── casos-de-uso.md
+│   ├── der.md
+│   ├── diagrama-classes.md
+│   ├── diagrama-sequencia.md
+│   └── sql/schema.sql
+└── README.md
+```
+
+---
+
+# Documentação Incluída
 
 O repositório contém:
-- Documento de requisitos
-- Casos de uso
-- Diagrama de caso de uso
+
+- Documento de Requisitos
+- Casos de Uso
+- Diagrama de Caso de Uso
 - Diagrama Entidade-Relacionamento (DER)
-- Script SQL do banco de dados
+- Diagrama de Classes
+- Diagrama de Sequência
+- Script SQL completo
+- README do projeto
 
-Todos os artefatos seguem rigorosamente o escopo definido para o Projeto 2 – Projeto Integrado I.
+---
 
-## Observações Finais
+# Limitações do MVP
 
-Este projeto foi desenvolvido como MVP, não realizando cobranças reais e não possuindo interface gráfica ou API no momento.
+- Não possui autenticação
+- Profissional fixo (id = 1)
+- Não realiza cobrança real
+- Execução local
+- Não possui controle de múltiplos usuários simultâneos
 
-Como evolução futura, está prevista a criação de uma interface gráfica ou web para interação com o sistema.
+---
 
+# Possíveis Evoluções Futuras
+
+- Sistema de login e autenticação
+- Cadastro dinâmico de profissionais
+- Dashboard administrativo
+- Deploy em ambiente de produção
+- Integração com sistema de pagamento
+- Controle de permissões
+- API REST documentada
+
+---
+
+# Desenvolvedores
+
+- Lana Lourrani
+- Leonardo Davi
+- Kildery Douglas
+
+---
+
+# Considerações Finais
+
+Este projeto foi desenvolvido como MVP acadêmico, com foco em:
+
+- Modelagem correta de banco de dados
+- Aplicação de regras de negócio via triggers
+- Implementação de recorrência com geração automática de ocorrências
+- Integração entre frontend, backend e banco de dados
+- Simulação de cálculo financeiro mensal
+
+O sistema não realiza cobranças reais, sendo apenas uma simulação para fins educacionais.
